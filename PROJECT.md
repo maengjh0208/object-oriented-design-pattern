@@ -1,0 +1,40 @@
+# PROJECT
+
+객체지향 디자인 패턴을 직접 구현하며 공부하는 레포. 생성/구조/행동 패턴을 하나씩 다룬다.
+
+## 구조
+
+```
+<패턴명>/              # 패턴별 구현 패키지 (예: facade/)
+tests/<패턴명>/        # 패턴별 테스트
+docs/specs_plans/     # 패턴별 스펙 + TDD 계획 문서
+conftest.py           # 빈 파일, repo 루트를 import 경로에 추가
+```
+
+## 환경
+
+- Python >= 3.12, 패키지 관리: `uv`
+- `pyproject.toml`에 `[tool.uv] package = false` — 빌드 대상 아님, 코드 모음일 뿐
+- 개발 의존성: `pytest`, `ruff`
+
+## 명령
+
+| 목적 | 명령 |
+|------|------|
+| 의존성 동기화 | `uv sync` |
+| 전체 테스트 | `uv run pytest -q` |
+| 특정 패턴 | `uv run pytest tests/facade/ -q` |
+| print 출력 보기 | `uv run pytest -s` |
+| 린트 | `uv run ruff check` |
+
+## 작업 방식
+
+- TDD: red → green → refactor. 테스트가 스펙 역할.
+- 각 패턴은 `docs/specs_plans/<패턴>.md`에 스펙·계획·결과를 남긴다.
+- 코드는 사용자가 직접 타이핑한다. Claude는 스펙 제공·리뷰·설명 담당.
+
+## 완료된 패턴
+
+| 패턴 | 분류 | 예제 | 문서 |
+|------|------|------|------|
+| Facade | 구조 | 홈시어터 | `docs/specs_plans/facade-home-theater.md` |
