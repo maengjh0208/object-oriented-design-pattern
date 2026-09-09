@@ -5,10 +5,12 @@
 ## 구조
 
 ```
-<패턴명>/              # 패턴별 구현 패키지 (예: facade/)
-tests/<패턴명>/        # 패턴별 테스트
-docs/specs_plans/     # 패턴별 스펙 + TDD 계획 문서
-conftest.py           # 빈 파일, repo 루트를 import 경로에 추가
+creational/<패턴>/     # 생성 패턴 구현 패키지
+structural/<패턴>/     # 구조 패턴 구현 패키지 (예: structural/facade/)
+behavioral/<패턴>/     # 행동 패턴 구현 패키지
+tests/<분류>/<패턴>/   # 패턴별 테스트 (분류 = creational/structural/behavioral)
+docs/specs_plans/      # 패턴별 스펙 + TDD 계획 문서
+conftest.py            # 빈 파일, repo 루트를 import 경로에 추가
 ```
 
 ## 환경
@@ -23,7 +25,7 @@ conftest.py           # 빈 파일, repo 루트를 import 경로에 추가
 |------|------|
 | 의존성 동기화 | `uv sync` |
 | 전체 테스트 | `uv run pytest -q` |
-| 특정 패턴 | `uv run pytest tests/facade/ -q` |
+| 특정 패턴 | `uv run pytest tests/structural/facade/ -q` |
 | print 출력 보기 | `uv run pytest -s` |
 | 린트 | `uv run ruff check` |
 
