@@ -79,7 +79,58 @@ class HomeTheaterFacade:
 
 객체 사이의 책임 분배와 상호작용, 알고리즘에 대한 패턴.
 
-_아직 학습한 패턴 없음._
+### Strategy
 
-<!-- 예정: Strategy, Observer, Command, State, Template Method, Iterator,
+> 예제: 장바구니 할인 정책 · 문서: [`docs/specs_plans/strategy-discount-policy.md`](docs/specs_plans/strategy-discount-policy.md)
+
+**무엇인가**
+알고리즘군(정률 할인, 정액 할인, 할인 없음)을 각각 객체로 캡슐화해서
+교체 가능하게 만드는 패턴. 알고리즘을 쓰는 쪽(`Cart`)과 알고리즘 자체(`DiscountPolicy`)를 분리한다.
+
+**왜 사용하는가**
+- 행동을 `if method == "percent": ... elif ...` 로 고르면, 정책 추가 때마다 그 분기를
+  수정해야 하고(OCP 위반), 각 알고리즘을 단독으로 테스트하기 어렵다.
+- 각 알고리즘을 `DiscountPolicy` 구현 클래스로 빼면, `Cart` 는 인터페이스에만 의존한다.
+  새 정책은 클래스 하나 추가로 끝나고, `cart.set_discount(...)` 로 런타임에 갈아끼운다.
+
+**어떻게 구현하는가**
+1. `DiscountPolicy` (ABC): `apply(price: int) -> int` 하나만 가진 인터페이스.
+2. 구현체들: `NoDiscount`(그대로 반환 — 널 오브젝트), `PercentageDiscount(rate)`,
+   `FixedDiscount(amount)`.
+3. `Cart` (Context): `DiscountPolicy` 참조를 보유하고 `total()` 에서 위임한다.
+   할인 계산 로직은 `Cart` 에 없다.
+4. 잘못된 설정값은 전략 생성자에서 막는다 (`PercentageDiscount` 의 `rate` 범위 검증).
+
+```python
+class DiscountPolicy(ABC):
+    @abstractmethod
+    def apply(self, price: int) -> int: ...
+
+class PercentageDiscount(DiscountPolicy):
+    def __init__(self, rate: float):
+        if not 0 <= rate <= 1:
+            raise ValueError("Rate must be between 0 and 1")
+        self._rate = rate
+    def apply(self, price: int) -> int:
+        return price - round(price * self._rate)
+
+class Cart:
+    def __init__(self, discount: DiscountPolicy | None = None):
+        self._items: list[int] = []
+        self._discount = discount or NoDiscount()
+    def total(self) -> int:
+        return self._discount.apply(sum(self._items))
+```
+
+**혼동하기 쉬운 패턴과의 차이**
+- **State**: 구조는 거의 같다. State는 객체가 내부 상태에 따라 *스스로* 전이한다.
+  Strategy는 *클라이언트가* 전략을 골라 주입하고, 전략끼리 서로를 모른다.
+- **Template Method**: 알고리즘 골격을 상속으로 고정하고 일부 단계만 오버라이드(컴파일 타임).
+  Strategy는 알고리즘 전체를 위임으로 교체(런타임).
+
+**주의점**
+- 상태 없는 알고리즘이면 Python에선 클래스 대신 함수로도 충분하다. 설정값·검증이
+  붙을 때 클래스가 값을 한다.
+
+<!-- 예정: Observer, Command, State, Template Method, Iterator,
      Chain of Responsibility, Mediator, Memento, Visitor, Interpreter -->

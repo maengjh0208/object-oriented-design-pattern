@@ -40,3 +40,4 @@ conftest.py            # 빈 파일, repo 루트를 import 경로에 추가
 | 패턴 | 분류 | 예제 | 문서 |
 |------|------|------|------|
 | Facade | 구조 | 홈시어터 | `docs/specs_plans/facade-home-theater.md` |
+| Strategy | 행동 | 장바구니 할인 정책 | `docs/specs_plans/strategy-discount-policy.md` |
