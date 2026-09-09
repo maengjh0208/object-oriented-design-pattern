@@ -70,8 +70,8 @@ tests/facade/test_home_theater.py
 
 ## 결과 (2026-09-07 완료)
 
-- `facade/home_theater.py`: 서브시스템 6개 + `Device` base + `HomeTheaterFacade`
-- `tests/facade/test_home_theater.py`: 4 passed
+- `../../structural/facade/home_theater.py`: 서브시스템 6개 + `Device` base + `HomeTheaterFacade`
+- `../../tests/structural/facade/test_home_theater.py`: 4 passed
   1. `watch_movie` 위임 순서 검증
   2. `end_movie` 위임 순서 검증
   3. 서브시스템 단독 사용 (Facade 없이 동작)

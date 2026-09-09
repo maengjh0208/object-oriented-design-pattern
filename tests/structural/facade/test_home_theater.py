@@ -1,4 +1,4 @@
-from facade.home_theater import (
+from structural.facade.home_theater import (
     Amplifier,
     DvdPlayer,
     HomeTheaterFacade,
