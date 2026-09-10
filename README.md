@@ -132,5 +132,71 @@ class Cart:
 - 상태 없는 알고리즘이면 Python에선 클래스 대신 함수로도 충분하다. 설정값·검증이
   붙을 때 클래스가 값을 한다.
 
-<!-- 예정: Observer, Command, State, Template Method, Iterator,
+### Template Method
+
+> 예제: 음료 제조 (커피/홍차) · 문서: [`docs/specs_plans/template-method-beverage.md`](docs/specs_plans/template-method-beverage.md)
+
+**무엇인가**
+알고리즘의 골격(물 끓이기 → 우리기 → 따르기 → 첨가물)을 부모 클래스의 메서드
+하나에 고정하고, 달라지는 단계(우리는 법, 첨가물)만 서브클래스가 채우는 패턴.
+공통 흐름은 부모에 한 번만 존재한다.
+
+**왜 사용하는가**
+- 여러 클래스가 큰 흐름은 똑같고 몇 단계만 다르면, 그 흐름을 각 클래스에 복사하게 된다.
+  한 곳을 고치면 나머지를 다 따라 고쳐야 한다.
+- 흐름을 부모 `prepare()` 에 두고 변하는 단계만 추상 메서드로 열어두면, 서브클래스
+  코드는 "변하는 부분만" 남는다. 흐름 수정은 부모 한 곳.
+- **할리우드 원칙**: 자식이 부모를 부르지 않는다. 부모 `prepare()` 가 자식이 채운
+  `brew()` 를 부른다. 흐름 제어권이 부모에 있다.
+
+**어떻게 구현하는가**
+1. `Beverage` (ABC): `prepare()` 템플릿 메서드가 단계 호출 순서를 고정한다.
+   이 메서드는 오버라이드하지 않는다.
+2. 공통 단계(`boil_water`, `pour_in_cup`)는 부모가 구현한다.
+3. 변하는 단계(`brew`, `add_condiments`)는 `@abstractmethod` — 자식이 반드시 구현.
+4. 훅(`wants_condiments`)은 기본 구현이 있는 메서드. 자식이 원할 때만 오버라이드해
+   흐름에 개입한다. `BlackCoffee` 는 이 훅만 `False` 로 바꿔 첨가물 단계를 건너뛴다.
+
+```python
+class Beverage(ABC):
+    def __init__(self) -> None:
+        self.steps: list[str] = []
+
+    def prepare(self) -> None:          # 템플릿 메서드 — 순서 고정
+        self.boil_water()
+        self.brew()
+        self.pour_in_cup()
+        if self.wants_condiments():     # 훅으로 분기
+            self.add_condiments()
+
+    def boil_water(self) -> None: self.steps.append("물 끓이기")
+    def pour_in_cup(self) -> None: self.steps.append("컵에 따르기")
+
+    @abstractmethod
+    def brew(self) -> None: ...
+    @abstractmethod
+    def add_condiments(self) -> None: ...
+
+    def wants_condiments(self) -> bool: return True   # 훅
+
+class Coffee(Beverage):
+    def brew(self) -> None: self.steps.append("커피 필터로 내리기")
+    def add_condiments(self) -> None: self.steps.append("설탕과 우유 추가")
+
+class BlackCoffee(Coffee):
+    def wants_condiments(self) -> bool: return False
+```
+
+**혼동하기 쉬운 패턴과의 차이**
+- **Strategy**: 알고리즘 전체를 위임으로 교체(런타임, has-a). Template Method는
+  골격을 상속으로 고정하고 일부 단계만 오버라이드(컴파일 타임, is-a).
+- **Factory Method**: Template Method의 특수한 경우 — 자식이 채우는 단계가
+  "객체 생성" 인 것.
+
+**주의점**
+- 상속 강결합. 부모 단계 시그니처를 바꾸면 모든 자식이 영향받는다. 조합이 폭발하면
+  (음료 × 우유 × 사이즈) 상속으로 안 되고 Strategy/Decorator 조합이 낫다.
+- 훅이 많아지면 `prepare()` 가 `if` 범벅이 된다. 그 단계를 Strategy 객체로 빼는 걸 고려.
+
+<!-- 예정: Observer, Command, State, Iterator,
      Chain of Responsibility, Mediator, Memento, Visitor, Interpreter -->
