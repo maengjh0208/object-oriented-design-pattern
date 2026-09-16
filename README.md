@@ -13,9 +13,52 @@
 객체를 어떻게 생성할지에 대한 패턴. 생성 로직을 캡슐화해 클라이언트가
 구체 클래스에 직접 의존하지 않게 한다.
 
-_아직 학습한 패턴 없음._
+### Singleton
 
-<!-- 예정: Singleton, Factory Method, Abstract Factory, Builder, Prototype -->
+> 예제: 앱 설정 관리자 · 문서: [`docs/specs_plans/singleton-app-config.md`](docs/specs_plans/singleton-app-config.md)
+
+**무엇인가**
+클래스의 인스턴스 생성을 하나로 제한하고, 그 유일 인스턴스에 접근하는 진입점을
+제공하는 패턴. `AppConfig()`를 몇 번 부르든 같은 객체를 돌려준다.
+
+**왜 사용하는가**
+- 설정값·캐시처럼 여러 곳에서 공유해야 하는 상태가 인스턴스마다 따로 생기면
+  값이 어긋나거나 자원이 낭비된다.
+- 전역 변수로 풀면 아무 데서나 값을 바꿔버릴 수 있어 통제가 안 된다. Singleton은
+  생성 시점·초기화 로직을 클래스 안에 캡슐화한다.
+
+**어떻게 구현하는가**
+1. `__new__`를 오버라이드해 클래스 변수 `_instance`에 최초 생성 결과를 캐싱하고,
+   이후 호출은 캐싱된 걸 반환한다.
+2. `__init__`은 `__new__`가 캐싱된 인스턴스를 반환해도 매번 다시 불린다. 가드 없이
+   두면 기존 상태가 기본값으로 덮어써지므로, `_initialized` 플래그로 최초 1회만
+   초기화하도록 막는다.
+
+```python
+class AppConfig:
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
+    def __init__(self):
+        if hasattr(self, "_initialized"):
+            return
+        self.debug = False
+        self.api_key = None
+        self._initialized = True
+```
+
+**주의점**
+- 전역 상태라 테스트 간 상태 오염이 생기기 쉽다(한 테스트가 바꾼 값이 다음 테스트에
+  그대로 남음). 숨은 의존성 문제도 있다 — 함수 시그니처만 봐선 이 의존이 안 보인다.
+- 파이썬에선 클래스 기반 Singleton보다 **모듈 레벨 인스턴스**(모듈에 객체 하나 만들고
+  다들 import)가 더 단순하고 관용적이다. 이번 구현은 GoF 메커니즘 자체를 배우려고
+  정석대로 간 것.
+
+<!-- 예정: Factory Method, Abstract Factory, Builder, Prototype -->
 
 ---
 
