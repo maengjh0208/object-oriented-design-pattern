@@ -98,12 +98,17 @@ class HomeTheaterFacade:
         self.lights, self.screen, self.popper = lights, screen, popper
 
     def watch_movie(self, movie):
-        self.popper.on(); self.popper.pop()
+        self.popper.on()
+        self.popper.pop()
         self.lights.dim(10)
         self.screen.down()
-        self.projector.on(); self.projector.wide_screen_mode()
-        self.amp.on(); self.amp.set_dvd(self.dvd); self.amp.set_volume(5)
-        self.dvd.on(); self.dvd.play(movie)
+        self.projector.on()
+        self.projector.wide_screen_mode()
+        self.amp.on()
+        self.amp.set_dvd(self.dvd)
+        self.amp.set_volume(5)
+        self.dvd.on()
+        self.dvd.play(movie)
 ```
 
 **혼동하기 쉬운 패턴과의 차이**
@@ -149,18 +154,22 @@ class DiscountPolicy(ABC):
     @abstractmethod
     def apply(self, price: int) -> int: ...
 
+
 class PercentageDiscount(DiscountPolicy):
     def __init__(self, rate: float):
         if not 0 <= rate <= 1:
             raise ValueError("Rate must be between 0 and 1")
         self._rate = rate
+
     def apply(self, price: int) -> int:
         return price - round(price * self._rate)
+
 
 class Cart:
     def __init__(self, discount: DiscountPolicy | None = None):
         self._items: list[int] = []
         self._discount = discount or NoDiscount()
+
     def total(self) -> int:
         return self._discount.apply(sum(self._items))
 ```
@@ -205,29 +214,39 @@ class Beverage(ABC):
     def __init__(self) -> None:
         self.steps: list[str] = []
 
-    def prepare(self) -> None:          # 템플릿 메서드 — 순서 고정
+    def prepare(self) -> None:  # 템플릿 메서드 — 순서 고정
         self.boil_water()
         self.brew()
         self.pour_in_cup()
-        if self.wants_condiments():     # 훅으로 분기
+        if self.wants_condiments():  # 훅으로 분기
             self.add_condiments()
 
-    def boil_water(self) -> None: self.steps.append("물 끓이기")
-    def pour_in_cup(self) -> None: self.steps.append("컵에 따르기")
+    def boil_water(self) -> None:
+        self.steps.append("물 끓이기")
+
+    def pour_in_cup(self) -> None:
+        self.steps.append("컵에 따르기")
 
     @abstractmethod
     def brew(self) -> None: ...
     @abstractmethod
     def add_condiments(self) -> None: ...
 
-    def wants_condiments(self) -> bool: return True   # 훅
+    def wants_condiments(self) -> bool:
+        return True  # 훅
+
 
 class Coffee(Beverage):
-    def brew(self) -> None: self.steps.append("커피 필터로 내리기")
-    def add_condiments(self) -> None: self.steps.append("설탕과 우유 추가")
+    def brew(self) -> None:
+        self.steps.append("커피 필터로 내리기")
+
+    def add_condiments(self) -> None:
+        self.steps.append("설탕과 우유 추가")
+
 
 class BlackCoffee(Coffee):
-    def wants_condiments(self) -> bool: return False
+    def wants_condiments(self) -> bool:
+        return False
 ```
 
 **혼동하기 쉬운 패턴과의 차이**
@@ -241,5 +260,69 @@ class BlackCoffee(Coffee):
   (음료 × 우유 × 사이즈) 상속으로 안 되고 Strategy/Decorator 조합이 낫다.
 - 훅이 많아지면 `prepare()` 가 `if` 범벅이 된다. 그 단계를 Strategy 객체로 빼는 걸 고려.
 
-<!-- 예정: Observer, Command, State, Iterator,
+### State
+
+> 예제: 주문 상태 · 문서: [`docs/specs_plans/state-order.md`](docs/specs_plans/state-order.md)
+
+**무엇인가**
+객체의 내부 상태를 별도 클래스로 캡슐화하고, Context는 그 상태 객체에게 행동을
+위임하는 패턴. 상태가 바뀌면 Context가 들고 있는 상태 객체 자체를 교체한다.
+
+**왜 사용하는가**
+- `if state == "pending": ... elif ...` 로 분기하면, 상태 하나 추가·수정할 때마다
+  모든 메서드의 분기문을 찾아 고쳐야 한다(OCP 위반).
+- 상태별 로직을 클래스로 쪼개면 새 상태 추가 = 클래스 하나 추가. 기존 코드는 안 건드린다.
+- 상태별 전이 제약("배송중 이후엔 취소 불가")이 그 상태 클래스 안에 갇혀서 추적하기 쉽다.
+
+**어떻게 구현하는가**
+1. `OrderStatus` (상태 인터페이스): `pay`/`ship`/`deliver`/`cancel` 선언. 기본 구현은
+   전부 `InvalidTransitionError` — 각 상태는 자기가 허용하는 전이만 오버라이드한다.
+2. 전이는 상태 객체 자신이 결정한다: `order.status = Paid()`처럼 다음 상태 객체를
+   Context에 직접 꽂는다.
+3. `Order` (Context): 현재 상태 객체(`_status`)를 보유하고 호출을 위임만 한다.
+   전이 로직은 전혀 갖지 않는다.
+
+```python
+class OrderStatus:
+    def pay(self, order):
+        raise InvalidTransitionError(f"{type(self).__name__} 상태에서는 결제할 수 없습니다")
+    # ship, deliver, cancel 도 동일 패턴
+
+
+class Pending(OrderStatus):
+    def pay(self, order):
+        order.status = Paid()
+
+    def cancel(self, order):
+        order.status = Cancelled()
+
+
+class Order:
+    def __init__(self):
+        self._status = Pending()
+
+    @property
+    def status(self):
+        return type(self._status).__name__
+
+    @status.setter
+    def status(self, state):
+        self._status = state
+
+    def pay(self):
+        self._status.pay(self)
+```
+
+**혼동하기 쉬운 패턴과의 차이**
+- **Strategy**: 구조(Context가 교체 가능한 객체를 필드로 보유)는 거의 같다. 차이는
+  "누가 전이를 결정하는가" — State는 *상태 객체 자신*이 다음 상태로 전이하고 서로를
+  안다. Strategy는 *클라이언트*가 전략을 골라 주입하고, 전략끼리 서로 모른다.
+
+**주의점**
+- 기본 구현이 `raise`인 훅. Template Method의 훅은 기본값이 안전한 no-op이었는데,
+  State는 반대로 "허용 안 된 전이는 막는다"가 기본값이고 상태마다 예외 케이스만 연다.
+- 상태 클래스에 인스턴스 필드가 없으면(무상태) 사실상 재사용 가능한데, 전이마다
+  매번 새로 만든다. 상태가 많고 전이가 잦아지면 캐싱을 고려할 수 있다(지금은 불필요).
+
+<!-- 예정: Observer, Command, Iterator,
      Chain of Responsibility, Mediator, Memento, Visitor, Interpreter -->
