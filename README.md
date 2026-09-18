@@ -286,6 +286,7 @@ class BlackCoffee(Coffee):
 class OrderStatus:
     def pay(self, order):
         raise InvalidTransitionError(f"{type(self).__name__} 상태에서는 결제할 수 없습니다")
+
     # ship, deliver, cancel 도 동일 패턴
 
 

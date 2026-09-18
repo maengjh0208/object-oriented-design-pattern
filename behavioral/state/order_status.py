@@ -7,14 +7,10 @@ class OrderStatus:
         raise InvalidTransitionError(f"{type(self).__name__} 상태에서는 결제할 수 없음")
 
     def ship(self, order):
-        raise InvalidTransitionError(
-            f"{type(self).__name__} 상태에서는 배송을 시작할 수 없음"
-        )
+        raise InvalidTransitionError(f"{type(self).__name__} 상태에서는 배송을 시작할 수 없음")
 
     def deliver(self, order):
-        raise InvalidTransitionError(
-            f"{type(self).__name__} 상태에서는 배송완료 처리할 수 없음"
-        )
+        raise InvalidTransitionError(f"{type(self).__name__} 상태에서는 배송완료 처리할 수 없음")
 
     def cancel(self, order):
         raise InvalidTransitionError(f"{type(self).__name__} 상태에서는 취소할 수 없음")
