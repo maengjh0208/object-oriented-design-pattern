@@ -44,3 +44,4 @@ conftest.py            # 빈 파일, repo 루트를 import 경로에 추가
 | Template Method | 행동 | 음료 제조 (커피/홍차) | `docs/specs_plans/template-method-beverage.md` |
 | Singleton | 생성 | 앱 설정 관리자 | `docs/specs_plans/singleton-app-config.md` |
 | State | 행동 | 주문 상태 | `docs/specs_plans/state-order.md` |
+| Adapter | 구조 | 결제 게이트웨이 어댑터 | `docs/specs_plans/adapter-payment-gateway.md` |

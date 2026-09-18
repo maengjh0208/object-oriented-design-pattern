@@ -119,7 +119,60 @@ class HomeTheaterFacade:
 - 서브시스템 간 결합(`Amplifier`가 `DvdPlayer`를 입력 소스로 아는 것)은 도메인
   고유의 것이다. Facade가 없애는 건 이게 아니라, 클라이언트가 그 배선을 직접 하는 상황이다.
 
-<!-- 예정: Adapter, Bridge, Composite, Decorator, Flyweight, Proxy -->
+### Adapter
+
+> 예제: 결제 게이트웨이 어댑터 · 문서: [`docs/specs_plans/adapter-payment-gateway.md`](docs/specs_plans/adapter-payment-gateway.md)
+
+**무엇인가**
+바꿀 수 없거나 바꾸기 싫은 인터페이스(Adaptee)를, 클라이언트가 기대하는
+인터페이스(Target)로 겉에서 감싸 호환되게 만드는 패턴. 감싸지는 쪽 코드는
+한 줄도 안 바뀐다.
+
+**왜 사용하는가**
+- 서드파티 라이브러리나 레거시 코드는 고칠 수 없거나 고치면 안 될 때가 많다.
+- 클라이언트 코드가 이미 특정 인터페이스에 맞춰 짜여 있으면, 클라이언트는 안
+  바꾸고 새 구현체를 끼워 넣고 싶다.
+- 변환 로직을 Adapter 한 곳에 모아서, 이 변환이 코드베이스 여기저기 흩어지는
+  걸 막는다.
+
+**어떻게 구현하는가**
+1. `PaymentProcessor` (Target ABC): 우리 시스템이 기대하는 인터페이스
+   (`pay(amount: float) -> bool`).
+2. `LegacyGateway` (Adaptee): 서드파티 결제 라이브러리. 전혀 다른 시그니처
+   (`make_payment(amount_in_cents: int, currency: str) -> dict`), 코드 수정 불가로 가정.
+3. `PaymentGatewayAdapter` (Adapter): `PaymentProcessor`를 구현하면서
+   `LegacyGateway` 인스턴스를 합성으로 보유. 단위 변환(원 → 센트)과 반환값
+   변환(`dict` → `bool`)만 하고, 새 비즈니스 로직은 추가하지 않는다.
+
+```python
+class PaymentProcessor(ABC):
+    @abstractmethod
+    def pay(self, amount: float) -> bool: ...
+
+
+class PaymentGatewayAdapter(PaymentProcessor):
+    def __init__(self, legacy_gateway):
+        self._legacy_gateway = legacy_gateway
+
+    def pay(self, amount: float) -> bool:
+        cents = round(amount * 100)
+        result = self._legacy_gateway.make_payment(cents, "USD")
+        return result["success"]
+```
+
+**혼동하기 쉬운 패턴과의 차이**
+- **Facade**: 여러 서브시스템을 하나의 진입점으로 *단순화*한다. Adapter는
+  보통 하나의 호환 안 되는 클래스를 *변환*한다. 목적 자체가 다르다
+  (단순화 vs 호환성).
+
+**주의점**
+- Adaptee가 하나뿐이면 Target 인터페이스(ABC)가 장식에 가깝다 — 다형성
+  (여러 Adaptee를 갈아끼워도 클라이언트가 안 바뀌는 것)이 Adapter의 핵심
+  가치인데, 이건 Adaptee가 최소 두 개는 있어야 체감된다.
+- 부동소수점으로 금액 계산하는 건 위험하다(`round(amount * 100)`). 실무에선
+  `Decimal`이나 정수 최소단위 관리가 정석.
+
+<!-- 예정: Bridge, Composite, Decorator, Flyweight, Proxy -->
 
 ---
 
